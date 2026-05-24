@@ -11,17 +11,25 @@ for tech in TECHS:
     url = f"https://career.levtech.jp/engineer/offer/search/?emp[]=2&keyword={tech}"
     try:
         response = requests.get(url, headers=HEADERS)
+        
+        # --- 调试修改部分 ---
+        # 打印部分页面内容以便排查
+        print(f"[{tech}] 正在分析页面...")
+        
+        # 尝试匹配数字 (Levtech 页面可能改版了)
         match = re.search(r'p-search-result__count[^>]*>([\d,]+)<', response.text)
         
         if match:
-            count_str = match.group(1).replace(',', '')
-            count = int(count_str)
+            count = int(match.group(1).replace(',', ''))
+            print(f"[{tech}] 成功匹配到数字: {count}")
             
-            # 发送到你的 PHP 接口
+            # 发送给 PHP
             data = {'key': SECRET_KEY, 'tech': tech, 'count': count}
-            res = requests.post(API_RECEIVER, data=data)
-            print(f"成功: {tech} -> {count}, 服务器响应: {res.text}")
+            res = requests.post(API_RECEIVER, data=data, timeout=10)
+            print(f"[{tech}] 发送状态: {res.text}")
         else:
-            print(f"警告: 未找到 {tech} 的匹配数字")
+            # 如果匹配不到，打印预览，帮我们锁定新位置
+            print(f"[{tech}] 错误: 没找到匹配的数字。页面前500字符预览: {response.text[:500]}")
+            
     except Exception as e:
-        print(f"出错: {e}")
+        print(f"[{tech}] 异常: {e}")
